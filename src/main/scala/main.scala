@@ -11,6 +11,12 @@ object main extends App {
   case class Team(name: List[String])
   case class Avalaible(GAMEID: String, PT_AVAILABLE: Int)
   case class Datarow(name: String, headers: List[String],rowSet: List[Avalaible])
+  case class GameResult(GAME_ID: Int, TEAM_ABBREVIATION: String, PTS_QTR1: Int, PTS_QTR2: Int, PTS_QTR3: Int, PTS_QTR4: Int, PTS_OT1: Int, PTS_OT2: Int, PTS_OT3: Int){
+    def sumPoints = {
+      PTS_OT1+PTS_OT2+PTS_OT3+PTS_QTR1+PTS_QTR2+PTS_QTR3+PTS_QTR4
+    }
+  }
+  case class GameResultRow(rowSet: List[GameResult])
 
   override def main(args: Array[String]): Unit = {
 
@@ -34,7 +40,7 @@ object main extends App {
 
     println(Json.prettyPrint(name))
 
-    val file = new File("I:\\Users\\majesiu\\Desktop\\datasets.json")
+    val file = new File("C:\\Users\\majesiu\\Desktop\\datasets.json")
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(Json.prettyPrint(datasets))
     bw.close()
@@ -50,14 +56,36 @@ object main extends App {
         (JsPath  \ "rowSet").read[List[Avalaible]]
       )(Datarow.apply _)
 
-    val datarowResult: JsResult[Datarow] = games.validate[Datarow]
+    /*val datarowResult: JsResult[Datarow] = games.validate[Datarow]
 
     println(datarowResult.get)
 
-    val file2 = new File("I:\\Users\\majesiu\\Desktop\\games.json")
+    val file2 = new File("C:\\Users\\majesiu\\Desktop\\games.json")
     val bw2 = new BufferedWriter(new FileWriter(file2))
     bw2.write(Json.prettyPrint(games))
-    bw2.close()
+    bw2.close()*/
+
+    val linescore = datasets(1).get
+
+    implicit val gameResultReads: Reads[GameResult] = (
+        JsPath(1).read[Int] and
+        JsPath(4).read[String] and
+        JsPath(7).read[Int] and
+        JsPath(8).read[Int] and
+        JsPath(9).read[Int] and
+        JsPath(10).read[Int] and
+        JsPath(11).read[Int] and
+        JsPath(12).read[Int] and
+        JsPath(13).read[Int]
+      )(GameResult.apply _)
+
+    val gameresults = (linescore \ "rowSet").as[List[GameResult]]
+    for(i <- 0 until gameresults.size/2){
+      println(gameresults(i).TEAM_ABBREVIATION+" vs "+gameresults(i+1).TEAM_ABBREVIATION)
+      println(gameresults(i).sumPoints+" \t "+gameresults(i+1).sumPoints)
+    }
+
+    println(gameresults)
   }
 
 }
